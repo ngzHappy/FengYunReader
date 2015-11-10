@@ -12,11 +12,13 @@ SOURCES += $$PWD/main.cpp
 SOURCES += $$PWD/MainWindow.cpp
 
 HEADERS += $$PWD/MainWindow.hpp
+HEADERS += $$PWD/MainWindowPrivate.hpp
 
 FORMS   +=
 
 include( $$PWD/ItemView/ItemView.pri )
 include( $$PWD/ChapterListView/ChapterListView.pri )
+include( $$PWD/TextView/TextView.pri )
 
 #######
 #     #
@@ -24,3 +26,6 @@ include( $$PWD/ChapterListView/ChapterListView.pri )
 #     #
 #     #
 #######
+
+
+

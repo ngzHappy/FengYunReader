@@ -13,7 +13,9 @@ public:
     ~MainWindow();
 
 private:
-
+	class MainWindowPrivate;
+	friend class MainWindowPrivate;
+	MainWindowPrivate * thisp = nullptr;
 };
 
 #endif // MAINWINDOW_HPP
