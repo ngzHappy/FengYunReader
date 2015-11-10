@@ -12,81 +12,81 @@ class AbstractItemWidgetDelegate :
         public QStyledItemDelegate {
     Q_OBJECT
 protected:
-	AbstractItemWidgetView * view = 0;
-	/* 设置视图 */
-	void setView(AbstractItemWidgetView * v) { view = v; }
+    AbstractItemWidgetView * view = 0;
+    /* 设置视图 */
+    void setView(AbstractItemWidgetView * v) { view = v; }
 public:
-	typedef std::function<AbstractItemWidget*()> CreatEditorFunctionType;
+    typedef std::function<AbstractItemWidget*( const QModelIndex & )> CreatEditorFunctionType;
 public:
     /* 构造函数 */
     AbstractItemWidgetDelegate(AbstractItemWidgetView * ,QObject *  );
     AbstractItemWidgetDelegate(AbstractItemWidgetView * v):AbstractItemWidgetDelegate(v,nullptr){}
-	AbstractItemWidgetDelegate(AbstractItemWidgetView * v,const CreatEditorFunctionType & f, QObject *p):AbstractItemWidgetDelegate(v,p) {
-		setCreatEditorFunction(f);
-	}
+    AbstractItemWidgetDelegate(AbstractItemWidgetView * v,const CreatEditorFunctionType & f, QObject *p):AbstractItemWidgetDelegate(v,p) {
+        setCreatEditorFunction(f);
+    }
 
-	/*  */
-	void stopGC();
-	void startGC();
-	 
+    /*  */
+    void stopGC();
+    void startGC();
+
     /* 析构函数 */
-	virtual ~AbstractItemWidgetDelegate();
+    virtual ~AbstractItemWidgetDelegate();
 
-	/*读取视图*/
-	AbstractItemWidgetView * getView() const{ return view; }
+    /*读取视图*/
+    AbstractItemWidgetView * getView() const{ return view; }
 
-	/*创建Item*/
-	QWidget * createEditor(
-		QWidget * parent,
-		const QStyleOptionViewItem & option,
-		const QModelIndex & index) const override;
+    /*创建Item*/
+    QWidget * createEditor(
+        QWidget * parent,
+        const QStyleOptionViewItem & option,
+        const QModelIndex & index) const override;
 
-	/*绘制item*/
-	void paint(
-		QPainter * painter,
-		const QStyleOptionViewItem & option,
-		const QModelIndex & index) const override;
+    /*绘制item*/
+    void paint(
+        QPainter * painter,
+        const QStyleOptionViewItem & option,
+        const QModelIndex & index) const override;
 
-	/*获得item的高 长没用忽略*/
-	QSize sizeHint(
-		const QStyleOptionViewItem &option,
-		const QModelIndex &index) const override;
+    /*获得item的高 长没用忽略*/
+    QSize sizeHint(
+        const QStyleOptionViewItem &option,
+        const QModelIndex &index) const override;
 
-	/*设置model data*/
-	void setModelData(
-		QWidget * editor,
-		QAbstractItemModel * model,
-		const QModelIndex & index) const override;
+    /*设置model data*/
+    void setModelData(
+        QWidget * editor,
+        QAbstractItemModel * model,
+        const QModelIndex & index) const override;
 
-	/*设置item data*/
-	void setEditorData(
-		QWidget * editor,
-		const QModelIndex & index) const override;
+    /*设置item data*/
+    void setEditorData(
+        QWidget * editor,
+        const QModelIndex & index) const override;
 
-	virtual void updateEditorGeometry(
-		QWidget *,
-		const QStyleOptionViewItem & option,
-		const QModelIndex & index)  const override;
+    virtual void updateEditorGeometry(
+        QWidget *,
+        const QStyleOptionViewItem & option,
+        const QModelIndex & index)  const override;
 
-	virtual AbstractItemWidget *openPersistentEditorWidget(const QModelIndex &index) const;
-	virtual void closePersistentEditorWidget(const QModelIndex &index) const;
+    virtual AbstractItemWidget *openPersistentEditorWidget(const QModelIndex &index) const;
+    virtual void closePersistentEditorWidget(const QModelIndex &index) const;
 
     virtual void closeAllWidgetItem();
 protected:
-	bool event(QEvent * e) override;
-	virtual void destroyEditor(QWidget * editor, const QModelIndex &) const override;
+    bool event(QEvent * e) override;
+    virtual void destroyEditor(QWidget * editor, const QModelIndex &) const override;
 private:
-	class ThisPrivate;
-	friend class ThisPrivate;
-	ThisPrivate * thisp = 0;
+    class ThisPrivate;
+    friend class ThisPrivate;
+    ThisPrivate * thisp = 0;
 private:
-	CreatEditorFunctionType creat_editor_function;
+    CreatEditorFunctionType creat_editor_function;
 public:
-	const auto & getCreatEditorFuncton() const { return creat_editor_function; }
+    const auto & getCreatEditorFuncton() const { return creat_editor_function; }
 private:
-	void setCreatEditorFunction(const CreatEditorFunctionType & i) {
-		creat_editor_function = i;
-	}
+    void setCreatEditorFunction(const CreatEditorFunctionType & i) {
+        creat_editor_function = i;
+    }
 };
 
 
