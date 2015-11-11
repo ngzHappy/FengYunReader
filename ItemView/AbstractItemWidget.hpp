@@ -63,6 +63,14 @@ public:
         (void) index;
     }
 
+    virtual void updateEditorGeometry(
+        const QStyleOptionViewItem & option,
+        const QModelIndex & index)   {
+        (void)index;
+        finalRect_ = option.rect;
+        this->setGeometry(finalRect_);
+    }
+
     /* 构造 */
     virtual AbstractItemWidget * instance(
             QWidget * parent,
@@ -72,14 +80,6 @@ public:
         this->setParent(parent);
         this->beforePaint(option,index);
         return this;
-    }
-
-    virtual void updateEditorGeometry(
-        const QStyleOptionViewItem & option,
-        const QModelIndex & index)   {
-        (void)index;
-        finalRect_ = option.rect;
-        this->setGeometry(finalRect_);
     }
 
 };
