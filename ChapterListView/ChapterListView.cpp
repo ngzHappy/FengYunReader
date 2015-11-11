@@ -20,14 +20,16 @@ ChapterListView::ChapterListView(){
    }
 
    {
-	   QPalette pl = palette();
-	   pl.setBrush(QPalette::Base, QBrush(QColor(255, 0, 0, 0)));
-	   setPalette(pl);
+       QPalette pl = palette();
+       pl.setBrush(QPalette::Base, QBrush(QColor(255, 0, 0, 0)));
+       setPalette(pl);
    }
 
    {
-	   auto * vb = this->verticalScrollBar();
-	   vb->setStyleSheet(
+       this->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+       this->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+       auto * vb = this->verticalScrollBar();
+       vb->setStyleSheet(
 u8R"(
 
 QScrollBar:vertical {
@@ -63,7 +65,7 @@ QScrollBar:vertical {
  }
 
 )"
-		   );
+           );
    }
 
 }

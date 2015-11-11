@@ -8,7 +8,11 @@
 
 namespace {
     int randInt_80_180() {
-        return (std::rand()&63) + 117;
+        return (std::rand()%100) + 80;
+    }
+
+    int randInt_150_180() {
+        return (std::rand()%30) + 150;
     }
 }
 
@@ -68,7 +72,7 @@ void ChapterItemWidget::_mouse_enter() {
     const auto && finalPos = this->geometry().topLeft();
     auto * animation = new QPropertyAnimation(this, "pos", objectManager);
     animation->setDuration(100);
-    animation->setStartValue(finalPos - QPoint(3, 3));
+    animation->setStartValue(finalPos - QPoint(12, 0));
     animation->setEndValue(finalPos);
     animation->connect(animation, &QPropertyAnimation::finished,
         [this]() {
@@ -105,7 +109,7 @@ void ChapterItemWidget::paintEvent( QPaintEvent * )   {
     QPainter painter(this);
 
     /* 绘制背景 */
-    if ( this->underMouse() ) {
+    if ( this->underMouse()  ) {
         painter.fillRect( this->rect(),QColor(randInt_80_180(), randInt_80_180(), randInt_80_180() , 150 ) );
     }
     else {
@@ -122,25 +126,31 @@ void ChapterItemWidget::paintEvent( QPaintEvent * )   {
         painter.drawRect( this->rect() );
     }
 
-	/* 绘制文字 */
-	QString stringData = QString::asprintf(" %5d. ",
-		chapterData.getChapterIndex()) +
-		chapterData.getChapterName() ;
-	{
-		{
-			QFont font = painter.font();
-			font.setPointSize(12);
-			painter.setFont(font);
-		}
-		QFontMetricsF fm_( painter.font() );
-		painter.setBrush( QColor(0,0,0,255));
-		painter.setPen(QColor(0, 0, 0, 255));
-		painter.drawText( 
-			QRect( 0, 0, int( fm_.width(stringData)+1 ) ,this->height()),
-			Qt::AlignLeft| Qt::AlignVCenter,
-			stringData );
-	}
-	
+    /* 绘制文字 */
+    QString stringData = QString::asprintf(" %5d. ",
+        chapterData.getChapterIndex()) +
+        chapterData.getChapterName() ;
+    {
+        {
+            QFont font = painter.font();
+            font.setPointSize(13);
+            //font.setWeight( QFont::Bold );
+            painter.setFont(font);
+        }
+        QFontMetricsF fm_( painter.font() );
+        painter.setBrush( QColor(randInt_150_180()+30, randInt_150_180()+30, randInt_150_180()+30,199));
+        painter.setPen(   QColor(randInt_150_180()+30, randInt_150_180()+30, randInt_150_180()+30, 199));
+        painter.drawText(
+            QRect( 0, 0, int( fm_.width(stringData)+1 ) ,this->height()),
+            Qt::AlignLeft| Qt::AlignVCenter,
+            stringData );
+    }
+
+    //if ( false == isFirstPainted ) {
+    //    isFirstPainted=true;
+    //    return _mouse_enter();
+    //}
+
 }
 
 /* 设置模型数据 */
@@ -188,11 +198,11 @@ AbstractItemWidget * ChapterItemWidget::instance(
 }
 
 void ChapterItemWidget::enterEvent(QEvent *){
-	this->update();
-	//return _mouse_enter();
+    this->update();
+    return _mouse_enter();
 }
 void ChapterItemWidget::leaveEvent(QEvent *){
-	this->update();
+    this->update();
 }
 
 /*

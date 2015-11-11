@@ -40,7 +40,7 @@ void TextView::Widget::paintEvent(QPaintEvent * e ){
 
 void TextView::_try_start_animation(){
     if (animationTimer.isActive()) { return; }
-    animationTimer.start( 16 );
+    animationTimer.start(  5 );
 }
 
 void TextView::resizeEvent(QResizeEvent * e) {
@@ -324,11 +324,8 @@ void TextView::keyPressEvent(QKeyEvent * e) {
 
 void TextView::_animationTimer() {
 
-    enum {
-        STEP=28
-    };
-
     auto v = this->horizontalScrollBar()->value();
+    auto STEP= 1+ std::abs( v - goalValue )/2 ;
     if ( v>goalValue ) {
         v-=STEP;
         this->horizontalScrollBar()->setValue(  std::max(v, goalValue) );
