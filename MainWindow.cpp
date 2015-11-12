@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QPainter>
 #include <QLinearGradient>
+#include <QShowEvent>
 
 int MainWindow::getChapter( )const {
     return thisp->chapter;
@@ -12,9 +13,13 @@ int MainWindow::getChapter( )const {
 void MainWindow::setChapter(int i) {
     thisp->chapter = i ;
     auto data_ = thisp->chapterListView->getModel()->get( i );
-	if (data_.isSetData().load()){
-		thisp->textView->setText(data_.getChapterData());
-	}
+    if( data_.isValid() == false ){return;}
+    if (data_.isSetData().load()){
+        thisp->textView->setText(data_.getChapterData());
+    }else{
+        thisp->textView->setText( "waiting for load" );
+    }
+    this->setWindowTitle(  bookName +" : "+ data_.getChapterName() );
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -42,25 +47,25 @@ MainWindow::MainWindow(QWidget *parent) :
 
     thisp = new MainWindowPrivate;
 
-    thisp->splitter = new QSplitter;
+    thisp->splitter = new  MainWindowSplitter ;
     layout_->addWidget ( thisp->splitter );
     //thisp->splitter->setHandleWidth( 6 );
 
     thisp->chapterListView = new ChapterListView;
-    thisp->splitter->addWidget(thisp->chapterListView);
+    thisp->splitter->insertWidget(0,thisp->chapterListView);
 
     thisp->textView = new TextView;
-    thisp->splitter->addWidget( thisp->textView );
+    thisp->splitter->insertWidget(1,thisp->textView );
 
-	thisp->splitter->setStretchFactor(0, -1);
-	thisp->splitter->setStretchFactor(1,  1);
+    thisp->splitter->setStretchFactor(0, -1  );
+    thisp->splitter->setStretchFactor(1,  10 );
 
     thisp->chapterListView->connect(
               thisp->chapterListView, &ChapterListView::currentIndexChanged,
               this ,&MainWindow::setChapter
                 );
-	thisp->splitter->setStyleSheet(
-		u8R"(
+    thisp->splitter->setStyleSheet(
+        u8R"(
 QSplitter::handle {
     background: transparent   ;
 }
@@ -82,7 +87,8 @@ QSplitter::handle {
         thisp->textView,&TextView::keyDown,
         [this]() { thisp->chapterListView->setNextCurrentIndex(  1); }
     );
-     
+
+
 }
 
 ChapterListView * MainWindow::getChapterListView()const {
@@ -95,7 +101,7 @@ MainWindow::~MainWindow()
 }
 
 void  MainWindow::paintEvent(QPaintEvent *){
-	QPainter p(this);
+    QPainter p(this);
 
     if( std::abs(painterTime.elapsed()) > 500 )
     {
@@ -163,28 +169,28 @@ void  MainWindow::paintEvent(QPaintEvent *){
 
 void MainWindow::startDownload(int v) {
 
-	if (thisp->downLoad) {
-		thisp->downLoad->disconnect(thisp->downLoad.get(),nullptr,this,nullptr);
-	}
-	
-	QString dirPath = QApplication::applicationDirPath() ;
-	{
-		QDir dir(dirPath);
-		dirPath.append( "/data" );
-		dir.mkdir(dirPath);
-		dirPath += "/"+QString("%1").arg( int(v) )  ;
-		dir.mkdir(dirPath);
-	}
-	thisp->downLoad = 
-		FengYunDownLoad::instance( dirPath );
+    if (thisp->downLoad) {
+        thisp->downLoad->disconnect(thisp->downLoad.get(),nullptr,this,nullptr);
+    }
 
-	connect(
-		thisp->downLoad.get(),
-		&FengYunDownLoad::downLoadHeaders,
-		this,
-		&MainWindow::downLoadHeaders,
-		Qt::QueuedConnection
-		);
+    QString dirPath = QApplication::applicationDirPath() ;
+    {
+        QDir dir(dirPath);
+        dirPath.append( "/data" );
+        dir.mkdir(dirPath);
+        dirPath += "/"+QString("%1").arg( int(v) )  ;
+        dir.mkdir(dirPath);
+    }
+    thisp->downLoad =
+        FengYunDownLoad::instance( dirPath );
+
+    connect(
+        thisp->downLoad.get(),
+        &FengYunDownLoad::downLoadHeaders,
+        this,
+        &MainWindow::downLoadHeaders,
+        Qt::QueuedConnection
+        );
 
     connect(
         thisp->downLoad.get(),
@@ -196,7 +202,7 @@ void MainWindow::startDownload(int v) {
 
     thisp->chapter = 0;
     thisp->textView->setText("");
-	thisp->downLoad->startDownLoad( v );
+    thisp->downLoad->startDownLoad( v );
 
 }
 
@@ -208,12 +214,20 @@ void MainWindow::trySetChapter(int i) {
 
 void MainWindow::downLoadHeaders( FengYunDownLoadHeader h ) {
 
-	this->setWindowTitle( h.bookName );
-	thisp->chapterListView->resetModelData(
-		h.allDatas->size(),
-		h.allDatas->begin(),
-		h.allDatas->end() 
-		);
+    bookName = h.bookName;
+    this->setWindowTitle( h.bookName );
+    thisp->chapterListView->resetModelData(
+        h.allDatas->size(),
+        h.allDatas->begin(),
+        h.allDatas->end()
+        );
 
 }
 
+void MainWindow::showEvent(QShowEvent * event) {
+    QWidget::showEvent( event );
+    if ( thisp->isFirstShow ) {
+        thisp->isFirstShow=false;
+        thisp->splitter->moveSplitter( 128 ,1 ) ;
+    }
+}

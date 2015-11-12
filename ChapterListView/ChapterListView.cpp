@@ -10,7 +10,7 @@ ChapterListView::ChapterListView(){
    [](const QModelIndex &)->AbstractItemWidget*{ return new ChapterItemWidget; } ,
    this)  );
 
-   this->setMinimumWidth( 98 );
+   this->setMinimumWidth( 64 );
    this->setFrameStyle(QFrame::NoFrame);
 
    {

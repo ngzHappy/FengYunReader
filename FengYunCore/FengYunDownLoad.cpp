@@ -135,30 +135,45 @@ namespace {
             regex1.setMinimal(true);
 
             while ((pos = regex0.indexIn(dataFile, pos)) != -1) {
+
+                /* 获得章节名称 */
                 QString cp = regex0.cap(1).trimmed();
                 pos += regex0.matchedLength();
 
                 {
+                    /* 匹配章节名 */
                     auto it_ = allItems.find(cp);
                     if (it_!=allItems.end()) {
                         item = it_->second;
                     }
                     else {
-                        const QString cp1 = cp.mid( cp.indexOf(" "),-1 ).trimmed() ;
-                        auto it_1 = allItems.find(cp1);
-                        if (
-                            (it_1 != allItems.end())&&
-                            (it_1->second.getChapterURL().isEmpty())
-                            ) {
-                            item = it_1->second;
+                        int try_time = 3;
+                        while( (cp.isEmpty() == false) && ((try_time--)>0)  ){
+                            auto space_pos = cp.indexOf(" ");
+                            if( space_pos < 0 ){
+                                try_time = -10;
+                                qDebug().noquote() << "can not find  " << cp ;
+                                continue ;
+                            }
+                            const QString cp1 = cp.mid( space_pos ,-1 ).trimmed() ;
+                            cp = cp1;
+                            auto it_1 = allItems.find(cp1);
+                            if (
+                                    (it_1 != allItems.end())&&
+                                    (it_1->second.getChapterURL().isEmpty())
+                                    ) {
+                                item = it_1->second;
+                            }
+                            else {
+                                qDebug().noquote() << "can not find" << cp ;
+                                continue;
+                            }
                         }
-                        else {
-                            qDebug().noquote() << "can not find" << cp ;
-                            continue;
-                        }
+
                     }
                 }
 
+                /* 获得章节网址 */
                 if ( (pos = regex1.indexIn(dataFile, pos)) != -1 ) {
                     cp = regex1.cap(1).trimmed();
                     pos += regex1.matchedLength();

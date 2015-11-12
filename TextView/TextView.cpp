@@ -29,10 +29,10 @@ void TextView::setText(const QString & t) {
 void TextView::Widget::paintEvent(QPaintEvent * e ){
 
     QPainter p(this);
-    
+
     p.drawImage(
          e->rect().topLeft()
-        ,textViewPort->aboutToDraw 
+        ,textViewPort->aboutToDraw
         ,e->rect()
         );
 
@@ -46,7 +46,7 @@ void TextView::_try_start_animation(){
 void TextView::resizeEvent(QResizeEvent * e) {
     QScrollArea::resizeEvent(e);
     gen_draw_picture();
-     
+
     {
         this->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
         auto hb=this->horizontalScrollBar();
@@ -59,18 +59,18 @@ void TextView::resizeEvent(QResizeEvent * e) {
 }
 
 void TextView::gen_draw_picture() {
-    
+
     enum {
         DocumentMargin = 3
     };
     document.setDocumentMargin( DocumentMargin );
-    document.setPageSize( 
+    document.setPageSize(
     QSize{
         this->width()  ,
         this->height() - int(this->verticalScrollBar()->height()*0.05)
     }
         );
-     
+
     const auto pageCount_ = document.pageCount();
     const auto pageSize = document.pageSize();
 
@@ -93,20 +93,20 @@ void TextView::gen_draw_picture() {
         QImage image1(
             image.width()*pageCount_,
             int(pageSize.height()+0.999f),
-            QImage::Format_ARGB32 
+            QImage::Format_ARGB32
             );
         image1.fill( QColor(0,0,0,0) );
 
         QPainter painter(&image1);
         for (int i=0; i<pageCount_;++i ) {
-            painter.drawImage( 
+            painter.drawImage(
                 QPointF( image.width()*i ,0),image,
                 QRectF(  0,image1.height()*i,image.width(),image1.height() )
                 );
         }
 
         aboutToDraw=image1;
-        
+
     }
 
     {
@@ -154,20 +154,20 @@ TextView::TextView(QWidget *parent) :
             );
     }
 
-	{
-		QPalette pl =  palette();
-		pl.setBrush(QPalette::Base, QBrush(QColor(255, 0, 0, 0  )));
-		setPalette(pl);
+    {
+        QPalette pl =  palette();
+        pl.setBrush(QPalette::Base, QBrush(QColor(255, 0, 0, 0  )));
+        setPalette(pl);
         this->setFrameStyle(QFrame::NoFrame);
         this->setStyleSheet(" background :transparent; ");
-	}
+    }
 
-	{
+    {
         QFont font_=document.defaultFont();
         font_.setPointSize( 20 );
         font_.setWeight( QFont::Bold );
         document.setDefaultFont(font_);
-	}
+    }
 
     {
         this->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
@@ -176,7 +176,7 @@ TextView::TextView(QWidget *parent) :
             u8R"_(
 QScrollBar:horizontal {
     border: 0px solid green;
-    background: rgba(222,222,222,22) ;
+    background: transparent ;
     height: 15px;
     margin: 0px 0px 0 0px;
 }
@@ -214,34 +214,34 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;
 }
 
-            			)_"
+                        )_"
             );
     }
 
-	{
+    {
         this->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-		auto * vb = this->verticalScrollBar();
+        auto * vb = this->verticalScrollBar();
         vb->setMinimum(0);
         vb->setMaximum(0);
         vb->connect(vb,&QScrollBar::valueChanged,
             [vb](int i) { if (i==0) { return; } vb->setValue(0); }
             );
-		vb->setStyleSheet(
-			u8R"(
+        vb->setStyleSheet(
+            u8R"(
 
-	 QScrollBar:vertical {
+     QScrollBar:vertical {
      border: 0px solid grey;
      background: rgba(222,222,222,22) ;
      width: 15px;
      margin: 0px 0 0px 0;
  }
 
-	 QScrollBar::handle:vertical {
+     QScrollBar::handle:vertical {
      background: rgba( 100.100,100,100 );
      min-height: 20px;
  }
 
-	 QScrollBar::add-line:vertical {
+     QScrollBar::add-line:vertical {
      border: 0px solid yellow ;
      background: transparent ;
      height:  0px;
@@ -249,7 +249,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
      subcontrol-origin: margin;
  }
 
-	 QScrollBar::sub-line:vertical {
+     QScrollBar::sub-line:vertical {
      border: 0px solid grey;
      background: transparent ;
      height:  0px;
@@ -257,14 +257,14 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
      subcontrol-origin: margin;
  }
 
-	 QScrollBar::add-page:vertical, 
+     QScrollBar::add-page:vertical,
      QScrollBar::sub-page:vertical {
      background: transparent ;
  }
 
-			)"
-			);
-	}
+            )"
+            );
+    }
 
 }
 

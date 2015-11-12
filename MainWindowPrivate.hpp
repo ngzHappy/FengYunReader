@@ -9,13 +9,22 @@
 #include "TextView/TextView.hpp"
 #include "FengYunCore/FengYunDownLoad.hpp"
 
+class MainWindowSplitter : public QSplitter{
+    Q_OBJECT
+public:
+
+    using QSplitter::moveSplitter;
+
+};
+
 class MainWindow::MainWindowPrivate{
 public:
-	QSplitter * splitter;
+    MainWindowSplitter * splitter;
 	ChapterListView * chapterListView;
 	TextView * textView;
 	int chapter = 0 ;
 	std::shared_ptr<FengYunDownLoad>   downLoad  ;
+    bool isFirstShow=true;
 	MainWindowPrivate() {}
 	~MainWindowPrivate() {}
 
