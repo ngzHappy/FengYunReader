@@ -2,7 +2,9 @@
 #include <QSize>
 
 ChapterModel::ChapterModel(){
-
+    valid.getChapterData()="valid";
+    valid.getChapterName()="valid";
+    valid.getChapterURL()="valid";
 }
 
 ChapterModel::~ChapterModel(){

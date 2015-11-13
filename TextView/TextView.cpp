@@ -1,4 +1,5 @@
 ﻿#include "TextView.hpp"
+#include "TextViewPrivate.hpp"
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QScrollBar>
@@ -6,13 +7,127 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QKeyEvent>
+#include <memory>
+#include <QAbstractTextDocumentLayout>
+#include <QMouseEvent>
 #include <algorithm>
+#include <vector>
+#include <QTextBlock>
+
+namespace {
+    enum {
+        DocumentMargin=3
+    };
+}
+
+TextViewPrivate::TextViewPrivate(){
+thisThread = new TextViewPrivateThread;
+this->moveToThread( thisThread );
+connect(this,&TextViewPrivate::startDraw,
+        this,&TextViewPrivate::draw,
+        Qt::QueuedConnection
+        );
+thisThread->start();
+}
+TextViewPrivate::~TextViewPrivate(){
+thisThread->quit();
+thisThread->wait( 1000 );
+delete thisThread;
+}
+
+void TextViewPrivate::draw(
+    QPointer< QTextDocument > _doc ,
+    const int start_ ,
+    const int end_ ){
+    if( start_ > end_ ){ return; }
+    if (_doc.isNull()) { return; }
+
+    QTextDocument * doc=_doc.data();
+    if (doc==nullptr) { return; }
+
+    doc = doc->clone();
+    std::unique_ptr< QTextDocument > __doc(  doc  );
+
+    auto & document=*doc;
+    QImage aboutToDraw;
+
+    {
+        const auto pageCount_ = document.pageCount();
+        const auto pageSize = document.pageSize();
+
+        int width_=int(pageSize.width()+0.999f);
+        int height_=int(pageSize.height()*pageCount_+0.999f);
+
+        if ((width_<=0)||(height_<=0)) {
+            aboutToDraw=QImage();
+            emit drawFinished( aboutToDraw ,start_,end_ );
+            return;
+        }
+
+        {
+            QImage image(width_, height_, QImage::Format_ARGB32 );
+            image.fill( QColor(0,0,0,0) );
+            {
+                QPainter painter(&image);
+                painter.setRenderHint(QPainter::TextAntialiasing,true);
+                QAbstractTextDocumentLayout * layout_ = document.documentLayout();
+                QAbstractTextDocumentLayout::PaintContext ctx;
+
+                {
+                    typedef QAbstractTextDocumentLayout::Selection Selection;
+                    QVector<Selection> selections_;
+                    QTextCursor tc( doc );
+                    tc.setPosition( start_ ,QTextCursor::MoveAnchor );
+                    tc.movePosition( QTextCursor::Right,QTextCursor::KeepAnchor,end_-start_ );
+                    QTextCharFormat charFormat=tc.charFormat();
+                    charFormat.setBackground( QColor(55,66,60,120 ) ) ;
+                    selections_.push_back( { tc,  charFormat} );
+                    ctx.selections = selections_ ;
+                    ctx.cursorPosition = start_ ;
+                }
+
+                layout_->draw( &painter, ctx );
+            }
+            QImage image1(
+                image.width()*pageCount_,
+                int(pageSize.height()+0.999f),
+                QImage::Format_ARGB32
+                );
+            image1.fill( QColor(0,0,0,0) );
+
+            QPainter painter(&image1);
+            for (int i=0; i<pageCount_;++i ) {
+                painter.drawImage(
+                    QPointF( image.width()*i ,0),image,
+                    QRectF(  0,image1.height()*i,image.width(),image1.height() )
+                    );
+            }
+
+            aboutToDraw=image1;
+            emit drawFinished( aboutToDraw ,start_,end_ );
+            return ;
+        }
+
+
+    }
+
+    emit drawFinished( aboutToDraw ,start_,end_ );
+
+}
+
+
 
 void TextView::setText(const QString & t) {
 
     plainStringData=t;
     document.setPlainText(t);
     gen_draw_picture();
+
+    {
+        selectStartPos=-1;
+        selectRange={ -1,-1 };
+        aboutToDrawList.clear();
+    }
 
     {
         auto hb=this->horizontalScrollBar();
@@ -58,11 +173,9 @@ void TextView::resizeEvent(QResizeEvent * e) {
 
 }
 
+
 void TextView::gen_draw_picture() {
 
-    enum {
-        DocumentMargin = 3
-    };
     document.setDocumentMargin( DocumentMargin );
     document.setPageSize(
     QSize{
@@ -141,6 +254,19 @@ lable_widget_resize:
 
 TextView::TextView(QWidget *parent) :
     QScrollArea(parent){
+    thisp=new TextViewPrivate;
+
+    {
+        this->startTimer( 200 );
+    }
+
+    {
+        connect(
+            thisp,&TextViewPrivate::drawFinished,
+            this,&TextView::_redraw_select,
+            Qt::QueuedConnection
+            );
+    }
 
     {
         widget=new Widget(this);
@@ -270,6 +396,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 
 
 TextView::~TextView(){
+    delete thisp;
     delete widget;
 }
 
@@ -342,3 +469,132 @@ void TextView::_animationTimer() {
     animationTimer.stop();
     return ;
 }
+
+QPoint TextView::_project(QPoint p ) {
+
+    const auto hv_ = this->horizontalScrollBar()->value();
+    const auto x_=hv_+p.x();
+    const auto y_=p.y();
+    const auto pageSize = document.pageSize();
+
+    QPoint ans{x_,y_};
+
+    const auto page_=x_/int( pageSize.width() );
+    ans.setY( int(page_*pageSize.height()+y_) );
+    ans.setX( x_-int( page_*pageSize.width() ) );
+
+    return ans;
+
+}
+
+void TextView::mousePressEvent(QMouseEvent * e)  {
+QScrollArea::mousePressEvent(e);
+
+if( e->button() & Qt::LeftButton ){
+    isLeftKeyPressed = true;
+    auto x_ = document.documentLayout()->hitTest( _project(e->pos()) ,Qt::FuzzyHit );
+    selectRange = {x_,x_};
+    selectStartPos=x_;
+    QPointer< QTextDocument > doc_( &document );
+    aboutToDrawList.clear();
+    /* 开启绘制 */
+    thisp->startDraw( doc_,x_,x_ );
+}
+
+}
+void TextView::mouseReleaseEvent(QMouseEvent * e){
+QScrollArea::mousePressEvent(e);
+isLeftKeyPressed = false ;
+}
+void TextView::mouseMoveEvent(QMouseEvent * e)   {
+QScrollArea::mouseMoveEvent(e);
+if ( isLeftKeyPressed ) {
+    auto x_ = document.documentLayout()->hitTest( _project(e->pos()) ,Qt::FuzzyHit );
+    if ( x_>selectStartPos ) {
+        //QPointer< QTextDocument > doc_( &document );
+        auto selectRange_ = std::pair<int,int>{selectStartPos,x_};
+        if (selectRange_==selectRange) { return; }
+        selectRange=selectRange_;
+        /* 加入等待绘制队列 */
+        aboutToDrawList.emplace_back( selectStartPos,x_ );
+        //thisp->startDraw( doc_,selectStartPos,x_ );
+    }
+    else if(x_<selectStartPos){
+        //QPointer< QTextDocument > doc_( &document );
+        auto selectRange_ = std::pair<int,int>{x_,selectStartPos};
+        if (selectRange_==selectRange) { return; }
+        selectRange=selectRange_;
+        /* 加入等待绘制队列 */
+        aboutToDrawList.emplace_back( selectStartPos,x_ );
+        //thisp->startDraw( doc_,x_,selectStartPos );
+    }
+}
+}
+
+void TextView::_try_draw_next() {
+
+    {
+        if (aboutToDrawList.empty() == false ) {
+            std::vector< std::pair<int, int> > __dsl;
+            QPointer< QTextDocument > doc_( &document );
+            auto _aboutToDraw = *aboutToDrawList.begin();
+            aboutToDrawList.pop_front();
+            __dsl.push_back( _aboutToDraw );
+            while ( aboutToDrawList.empty()==false ) {
+                auto i=aboutToDrawList.begin();
+                if ( i->first == _aboutToDraw.first ) {
+                    __dsl.push_back(*i);
+                    aboutToDrawList.pop_front();
+                }
+                else {
+                    break;
+                }
+            }
+            std::sort(__dsl.begin(), __dsl.end(), [](const auto & i,const auto & j) {
+                return std::abs( i.first - i.second ) < std::abs( j.first - j.second );
+            });
+            _aboutToDraw=*( __dsl.rbegin() );
+            if (_aboutToDraw.first < _aboutToDraw.second) {
+                thisp->startDraw(doc_, _aboutToDraw.first, _aboutToDraw.second);
+            }
+            else {
+                thisp->startDraw(doc_, _aboutToDraw.second, _aboutToDraw.first);
+            }
+        }
+
+    }
+
+}
+
+void TextView::mouseDoubleClickEvent(QMouseEvent * e ){
+    QScrollArea::mouseDoubleClickEvent(e);
+    {
+        isLeftKeyPressed=false;
+        auto x_=document.documentLayout()->hitTest(_project(e->pos()), Qt::FuzzyHit);
+        QTextCursor cur(&document);
+        cur.setPosition(x_);
+        auto block=cur.block();
+        if (block.isValid()==false) { return; }
+        selectRange={ block.position(),block.position()+block.length() };
+        QPointer< QTextDocument > doc_(&document);
+        thisp->startDraw(doc_, selectRange.first, selectRange.second);
+    }
+}
+
+void TextView::timerEvent(QTimerEvent * e ){
+    QScrollArea::timerEvent(e);
+    this->_try_draw_next();
+}
+
+void TextView::_redraw_select(QImage i, int  x_ , int y_ ) {
+   _try_draw_next();
+
+   if (x_<selectRange.first) { return; }
+   if (y_>selectRange.second) { return; }
+
+   aboutToDraw=i;
+   this->viewport()->update();
+}
+
+/*
+*/

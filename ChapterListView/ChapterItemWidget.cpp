@@ -170,9 +170,9 @@ void ChapterItemWidget::setEditorData(
     typedef  QAbstractItemModel *  type_;
     model = qobject_cast<ChapterModel *>( type_( index_.model() ) );
     if (model == nullptr) { return; }
-    chapterData = model->get(index_.row());
+    chapterData = model->get( index_.row() );
+    if ( false == bool(chapterData) ) { return; }
     this->setToolTip( chapterData.getChapterName() );
-    if (false == bool(chapterData)) { return; }
 
 }
 

@@ -26,7 +26,7 @@ public:
     ~ChapterModel();
 
 	ChapterHeaderData get( std::size_t i ) {
-		if (i < datas_.size()) { return datas_[i]; }
+		if ( i < datas_.size() ) { return datas_[i]; }
 		return valid;
 	}
 
