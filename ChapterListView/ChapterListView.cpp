@@ -30,18 +30,20 @@ ChapterListView::ChapterListView(){
        this->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
        auto * vb = this->verticalScrollBar();
        vb->setStyleSheet(
-u8R"(
-
-QScrollBar:vertical {
+           u8R"(
+     QScrollBar:vertical {
      border: 0px solid grey;
      background: rgba(222,222,222,22) ;
-     width: 15px;
+     width: 13px;
      margin: 0px 0 0px 0;
  }
 
- QScrollBar::handle:vertical {
-     background: rgba( 100.100,100,100 );
-     min-height: 20px;
+QScrollBar::handle:vertical {
+     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+stop: 0 rgba(67,69,68,200 ),
+stop: 1 rgba(22,22,22,2)
+);
+     min-height: 23px;
  }
 
  QScrollBar::add-line:vertical {

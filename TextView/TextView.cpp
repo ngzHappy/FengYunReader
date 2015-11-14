@@ -83,7 +83,9 @@ void TextViewPrivate::draw(
                     charFormat.setBackground( QColor(55,66,60,120 ) ) ;
                     selections_.push_back( { tc,  charFormat} );
                     ctx.selections = selections_ ;
-                    ctx.cursorPosition = start_ ;
+                    if ( start_ == end_ ) {
+                        ctx.cursorPosition = start_ ;
+                    }
                 }
 
                 layout_->draw( &painter, ctx );
